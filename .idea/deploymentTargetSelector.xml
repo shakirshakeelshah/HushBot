@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="HushBot">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-07-19T09:54:29.353605600Z">
+        <DropdownSelection timestamp="2025-07-27T16:02:22.103786100Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\shahs\.android\avd\Medium_Phone.avd" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=522573f" />
             </handle>
           </Target>
         </DropdownSelection>

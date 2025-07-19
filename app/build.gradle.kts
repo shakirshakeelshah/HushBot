@@ -43,7 +43,8 @@ dependencies {
     // Location services
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation ("com.google.code.gson:gson:2.10.1")
-
+    implementation ("com.google.android.gms:play-services-maps:18.2.0")
+    implementation ("com.google.maps.android:maps-compose:4.3.3")
     // For simpler permission handling
     implementation("com.vmadalin:easypermissions-ktx:1.0.0")
     implementation(libs.androidx.core.ktx) // Moved to a new line

@@ -34,6 +34,15 @@ import com.google.android.gms.location.*
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlin.math.*
+// Add these imports at the top
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
 
 private const val GEOFENCE_PREFS = "geofence_prefs"
 private const val GEOFENCE_KEY = "geofence_list"
@@ -123,7 +132,78 @@ fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): F
    val c = 2 * atan2(sqrt(a), sqrt(1 - a))
    return (earthRadius * c).toFloat()
 }
+@Composable
+fun MapSelectionDialog(
+   initialLat: Double,
+   initialLng: Double,
+   onLocationSelected: (Double, Double) -> Unit,
+   onDismiss: () -> Unit
+) {
+   var selectedLocation by remember { mutableStateOf(LatLng(initialLat, initialLng)) }
+   val cameraPositionState = rememberCameraPositionState {
+      position = CameraPosition.fromLatLngZoom(selectedLocation, 15f)
+   }
 
+   AlertDialog(
+      onDismissRequest = onDismiss,
+      confirmButton = {
+         TextButton(
+            onClick = {
+               onLocationSelected(selectedLocation.latitude, selectedLocation.longitude)
+               onDismiss()
+            }
+         ) {
+            Text("Select Location")
+         }
+      },
+      dismissButton = {
+         TextButton(onClick = onDismiss) {
+            Text("Cancel")
+         }
+      },
+      title = { Text("Select Location on Map") },
+      text = {
+         Column {
+            Text(
+               "Tap on the map to select a location",
+               style = MaterialTheme.typography.bodyMedium,
+               modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Box(
+               modifier = Modifier
+                  .fillMaxWidth()
+                  .height(300.dp)
+                  .clip(RoundedCornerShape(8.dp))
+                  .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+               GoogleMap(
+                  modifier = Modifier.fillMaxSize(),
+                  cameraPositionState = cameraPositionState,
+                  onMapClick = { latLng ->
+                     selectedLocation = latLng
+                  }
+               ) {
+                  Marker(
+                     state = MarkerState(position = selectedLocation),
+                     title = "Selected Location",
+                     snippet = "Lat: ${String.format("%.6f", selectedLocation.latitude)}, " +
+                             "Lng: ${String.format("%.6f", selectedLocation.longitude)}"
+                  )
+               }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+               "Selected: ${String.format("%.6f", selectedLocation.latitude)}, " +
+                       "${String.format("%.6f", selectedLocation.longitude)}",
+               style = MaterialTheme.typography.bodySmall,
+               color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+         }
+      }
+   )
+}
 @Composable
 fun MainScreen() {
    val context = LocalContext.current
@@ -286,7 +366,7 @@ fun MainScreen() {
 
                if (mockLocation != null) {
                   Text(
-                     "⚠️ Using Mock Location",
+                     "⚠ Using Mock Location",
                      color = MaterialTheme.colorScheme.error,
                      style = MaterialTheme.typography.bodySmall,
                      fontWeight = FontWeight.Bold
@@ -606,6 +686,7 @@ fun MainScreen() {
 
 
          // Add Geofence Dialog
+// Add Geofence Dialog
          if (showDialog) {
             var dialogName by remember { mutableStateOf("") }
             var dialogLat by remember {
@@ -619,6 +700,7 @@ fun MainScreen() {
                )
             }
             var dialogRadius by remember { mutableStateOf("50") }
+            var showMapDialog by remember { mutableStateOf(false) }
 
             AlertDialog(
                onDismissRequest = { showDialog = false },
@@ -658,19 +740,42 @@ fun MainScreen() {
                         modifier = Modifier.fillMaxWidth()
                      )
                      Spacer(modifier = Modifier.height(8.dp))
-                     OutlinedTextField(
-                        value = dialogLat,
-                        onValueChange = { dialogLat = it },
-                        label = { Text("Latitude") },
-                        modifier = Modifier.fillMaxWidth()
-                     )
+
+                     Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                     ) {
+                        OutlinedTextField(
+                           value = dialogLat,
+                           onValueChange = { dialogLat = it },
+                           label = { Text("Latitude") },
+                           modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                           value = dialogLng,
+                           onValueChange = { dialogLng = it },
+                           label = { Text("Longitude") },
+                           modifier = Modifier.weight(1f)
+                        )
+                     }
+
                      Spacer(modifier = Modifier.height(8.dp))
-                     OutlinedTextField(
-                        value = dialogLng,
-                        onValueChange = { dialogLng = it },
-                        label = { Text("Longitude") },
-                        modifier = Modifier.fillMaxWidth()
-                     )
+
+                     Button(
+                        onClick = { showMapDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                           containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                     ) {
+                        Icon(
+                           Icons.Default.LocationOn,
+                           contentDescription = "Select on Map",
+                           modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text("Select Location on Map")
+                     }
+
                      Spacer(modifier = Modifier.height(8.dp))
                      OutlinedTextField(
                         value = dialogRadius,
@@ -681,6 +786,19 @@ fun MainScreen() {
                   }
                }
             )
+
+            // Map Selection Dialog
+            if (showMapDialog) {
+               MapSelectionDialog(
+                  initialLat = dialogLat.toDoubleOrNull() ?: currentLocation?.latitude ?: 0.0,
+                  initialLng = dialogLng.toDoubleOrNull() ?: currentLocation?.longitude ?: 0.0,
+                  onLocationSelected = { lat, lng ->
+                     dialogLat = String.format("%.6f", lat)
+                     dialogLng = String.format("%.6f", lng)
+                  },
+                  onDismiss = { showMapDialog = false }
+               )
+            }
          }
       }
    }

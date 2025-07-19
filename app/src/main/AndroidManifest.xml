@@ -33,6 +33,9 @@
             android:name=".GeofenceBroadcastReceiver"
             android:enabled="true"
             android:exported="false" />
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyCcS27GNXYpWFGE9XlGGyck1Xy7pQtOFxU" />
 
     </application>
 
