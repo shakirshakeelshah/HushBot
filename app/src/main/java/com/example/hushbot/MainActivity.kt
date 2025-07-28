@@ -285,7 +285,9 @@ fun MainScreen() {
          ) {
             Icon(Icons.Default.Add, contentDescription = "Add Geofence")
          }
-      }
+      },
+              // Add this line to move the button to the left
+              floatingActionButtonPosition = FabPosition.Start
    ) { padding ->
       Column(
          modifier = Modifier
